@@ -1,0 +1,16 @@
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern><![CDATA[
+             %d | %contextName | %14.14thread | %5.5level | %-20(%logger{0}.%method\(\)) | %msg %n
+           ]]></pattern>
+        </encoder>
+    </appender>
+
+    <logger name="linkscore" level="DEBUG" />
+
+    <root level="DEBUG">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

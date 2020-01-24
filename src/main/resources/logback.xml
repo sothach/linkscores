@@ -1,0 +1,23 @@
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern><![CDATA[
+             %d | %contextName | %14.14thread | %5.5level | %-20(%logger{0}.%method\(\)) | %msg %n
+           ]]></pattern>
+        </encoder>
+    </appender>
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${application.home:-.}/logs/application.log</file>
+        <encoder>
+            <pattern>%date [%level] from %logger in %thread - %message%n%xException</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="linkscore" level="DEBUG" />
+    <logger name="org.mongodb" level="OFF" />
+
+    <root level="DEBUG">
+        <appender-ref ref="FILE" />
+    </root>
+</configuration>

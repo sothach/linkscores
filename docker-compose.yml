@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+  mongo:
+    image: mongo:3.2.4
+    ports:
+      - 27017:27017
+    command: –smallfiles
+
+  app:
+    image: sothach/umf
+    links:
+      - mongo
+    stdin_open: true
+    tty: true
+    entrypoint: “java -Djava.security.egd=file:/dev/./urandom -jar /opt/app.jar”
