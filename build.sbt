@@ -2,7 +2,7 @@
 organization := "org.anized"
 name := "linkscore"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.12.10"
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.3",
@@ -14,7 +14,8 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.8" % Test
 )
 
-resolvers += DefaultMavenRepository
-resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
+resolvers ++= Seq(
+  DefaultMavenRepository,
+  "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/")
 
 trapExit := false
