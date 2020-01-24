@@ -15,5 +15,6 @@ libraryDependencies ++= Seq(
 )
 
 resolvers += DefaultMavenRepository
+resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
 
 trapExit := false
