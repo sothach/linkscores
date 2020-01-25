@@ -4,11 +4,10 @@ import java.net.ServerSocket
 
 import linkscore.persistence.{DbStarter, LinkscoreRepo}
 import org.slf4j.LoggerFactory
-
+import com.typesafe.config.ConfigFactory
 import scala.concurrent.ExecutionContext
 
 object Configuration {
-  import com.typesafe.config.ConfigFactory
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   private def getOption[T](key: String): Option[T] = if (conf.hasPath(key)) {

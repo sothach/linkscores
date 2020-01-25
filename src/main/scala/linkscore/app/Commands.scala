@@ -78,8 +78,12 @@ class Commands(scoreRepo: LinkscoreRepo) {
         this
       case command if command.startsWith("remove ") =>
         val url = command.drop(7).trim
-        Await.ready(scoreRepo.delete(url), timeout)
-        console.println(s"\tdeleted $url")
+        val response = Await.result(scoreRepo.delete(url), timeout)
+        if(response.getDeletedCount >= 1) {
+          console.println(s"\tremoved $url")
+        } else {
+          onError(s"failed to remove $url")
+        }
         this
       case "export" =>
         val export = Await.result(scoreRepo.reportScoresByDomain, timeout)

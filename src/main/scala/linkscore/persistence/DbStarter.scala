@@ -11,40 +11,40 @@ import de.flapdoodle.embed.process.io.{IStreamProcessor, Processors}
 import de.flapdoodle.embed.process.runtime.Network
 import org.slf4j.LoggerFactory
 
+import scala.collection.mutable
 import scala.util.Try
 
 object DbStarter {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
-  private var mongoExecutable: Option[MongodExecutable] = None
-  private var mongoUrl: Option[String] = None
+  private val mongoExecutable: mutable.Buffer[MongodExecutable] = mutable.Buffer.empty
 
   private val root = Logger.getLogger("")
   private val handlers = root.getHandlers
   handlers foreach(_.setLevel(Level.OFF))
 
   def start(bindIp: String, port: Int): Boolean =
-    mongoExecutable match {
-      case None =>
-        val config = new MongodConfigBuilder()
-          .version(Version.Main.PRODUCTION)
-          .net(new Net(bindIp, port, Network.localhostIsIPv6()))
-          .build();
-        Try(buildStarter) map { starter =>
-          mongoExecutable = Some(starter.prepare(config))
-          mongoExecutable.foreach(_.start())
-          logger.info(s"MongodDb started: mongodb://$bindIp:$port")
-          mongoUrl = Some(s"mongodb://$bindIp:$port")
-        }
-        true
-      case Some(_) =>
-        logger.warn(s"MongodDb already started: mongodb://$bindIp:$port")
-        false
+    if (mongoExecutable.isEmpty) {
+      val config = new MongodConfigBuilder()
+        .version(Version.Main.PRODUCTION)
+        .net(new Net(bindIp, port, Network.localhostIsIPv6()))
+        .build();
+      Try(buildStarter) map { starter =>
+        val mExec = starter.prepare(config)
+        mongoExecutable += mExec
+        mExec.start()
+        logger.info(s"MongodDb started: mongodb://$bindIp:$port")
+      }
+      true
+    } else {
+      logger.warn(s"MongodDb already started: mongodb://$bindIp:$port")
+      false
     }
 
   def stop(): Unit = {
-    mongoExecutable.foreach(_.stop())
-    logger.info(s"MongodDb stopped: ${mongoUrl.getOrElse("?")}")
+    val mExec = mongoExecutable.remove(0)
+    mExec.stop()
+    logger.info(s"MongodDb stopped}")
   }
 
   private def buildStarter = {

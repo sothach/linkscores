@@ -1,13 +1,13 @@
 package linkscore.domain
 
 import scala.util.{Failure, Try}
+import java.net.{URL => JUrl}
 
 case class URL(value: String)
 
 case class Entry(url: URL, domain: String, score: Int)
 object Entry {
   def apply(request: String): Try[Entry] = {
-    import java.net.{URL => JUrl}
     val linkPattern = """(.+)\s+(\d+)""".r
 
     request.trim match {
