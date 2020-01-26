@@ -21,7 +21,6 @@
 *  Scores and entry counts will be within the domain of an `Int` type in Scala, 0 to 2,147,483,647 (no negative values)
 
 ## Application Design
-The application consists of two main components:
 ### User Interface
 A command-line dialog providing a command prompt and help menu, that accepts commands (see above), attempts to execute
 them, and reporting success or errors.
@@ -31,22 +30,7 @@ executing user commands until terminated (QUIT).  Actions interact directly with
 to store and query the stored links.  This is designed to be easily extendible, should a new command need to be added,
 e.g., List all entries
 
-## Domain Model
-Taking a DDD approach to this assignment, the first steps was to sketch the domain based on the terminology used
-as the events occurring in the scenarios described.  The solution arrived at consists of three prime entities:
-1. __URL__
-    - the link to be stored, any valid URL is accepted (based on `java.net.Url`)
-1. __Score__
-    - the social score value for the link, a positive integer from 1 to 2,147,483,647 
-1. __Entry__
-    - the url and its associated score
-1. __Report__
-    - a record detaling the domain, number of links and total of all social scores
-
-As well as helping to tease-out the requirements and formulate the solution, this model defines the system boundary, 
-guarding against invalid inputs, either accidental or malicious
-
-## Persistence
+### Persistence
 As the current requirements consist of insert, delete and a group-by query, the service interface is implemented 
 directly in the persistence class.  This implementation does, however, take pains to avoid leaking implementation 
 details out to its clients
@@ -80,11 +64,27 @@ The internal BSON document format is as below:
 
 The store service runs in it's own, tunable, execution context, initially a fork-join pool with configurable parallelism
 
+### Domain Model
+Taking a DDD approach to this assignment, the first steps was to sketch the domain based on the terminology used
+as the events occurring in the scenarios described.  The solution arrived at consists of three prime entities:
+1. __URL__
+    - the link to be stored, any valid URL is accepted (based on `java.net.Url`)
+1. __Score__
+    - the social score value for the link, a positive integer from 1 to 2,147,483,647 
+1. __Entry__
+    - the url and its associated score
+1. __Report__
+    - a record detaling the domain, number of links and total of all social scores
+
+As well as helping to tease-out the requirements and formulate the solution, this model defines the system boundary, 
+guarding against invalid inputs, either accidental or malicious
+
 ## Building & testing
 ### Prerequisites
 *  Scala JDK 2.12.x
 *  SBT build tool, 1.x
-Optionally:
+
+_Optionally_:
 *  docker
 *  mongodb, mongodb-clients
 
@@ -137,7 +137,15 @@ Build a docker image of the application:
     % mkdir ~/data
     % docker run -d -p 27017:27017 -v ~/data:/data/db mongo
     % docker run --rm --interactive -e -Dmongodb.database.url=mongodb://0.0.0.0:27017 org.anized/linkscore:latest
+    
+verify storage:
 
+    % docker ps | grep mongo
+    % docker exec -it 2d11a758556c /bin/bash 
+    root@2d11a758556c:/# mongo
+    > use scores
+    > db.links.find();
+    
 ## Further evolution
 *  i18n for dialogue
 *  split service / persistence concerns

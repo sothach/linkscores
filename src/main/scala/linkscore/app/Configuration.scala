@@ -21,14 +21,15 @@ object Configuration {
   private implicit val ts: () => LocalDateTime = () => LocalDateTime.now
 
   val dbPort: Int = new ServerSocket(0).getLocalPort
-  private val mongoUrl = conf.as[Option[String]]("mongodb.database.url")
-  match {
-    case None => DbStarter.start
-    case url => url
-  }
+  private val maybeMongoUrl =
+    conf.as[Option[String]]("mongodb.database.url")
+    .orElse(DbStarter.start)
+
+  assert(maybeMongoUrl.nonEmpty, "MongodDb URL must be resolved")
+  val mongoUrl = maybeMongoUrl.get
 
   logger.info(s"creating repo attached to $mongoUrl")
-  val scoreRepo = new LinkscoreRepo(mongoUrl.get)
+  val scoreRepo = new LinkscoreRepo(mongoUrl)
   val commands = new Machine(scoreRepo)
 
   def shutdown(): Unit = DbStarter.stop()

@@ -12,7 +12,6 @@ import org.mongodb.scala.bson.codecs.Macros._
 import org.mongodb.scala.model.Accumulators._
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
-import org.mongodb.scala.result.DeleteResult
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
