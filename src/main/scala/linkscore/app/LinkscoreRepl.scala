@@ -2,8 +2,8 @@ package linkscore.app
 
 import scala.annotation.tailrec
 
-class LinkscoreRepl(console: ConsoleInOut, commands: Commands) {
-  import commands._
+class LinkscoreRepl(console: ConsoleInOut, stateMachine: Machine) {
+  import stateMachine._
 
   @tailrec
   private def inputLoop(next: State): State = next match {
@@ -11,7 +11,7 @@ class LinkscoreRepl(console: ConsoleInOut, commands: Commands) {
       case state => inputLoop(state.action())
     }
 
-  def run(): Unit = inputLoop(ReadCommand(console))
+  def run(): Unit = inputLoop(Reader(console))
 }
 
 object StdLinkscoreRepl extends LinkscoreRepl(new StdInputOutput, Configuration.commands) {

@@ -1,6 +1,7 @@
 package linkscore.persistence
 
 import java.io.{File, FileOutputStream}
+import java.net.ServerSocket
 import java.util.logging.{Level, Logger}
 
 import de.flapdoodle.embed.mongo.config.{MongodConfigBuilder, Net, RuntimeConfigBuilder}
@@ -23,28 +24,30 @@ object DbStarter {
   private val handlers = root.getHandlers
   handlers foreach(_.setLevel(Level.OFF))
 
-  def start(bindIp: String, port: Int): Boolean =
+  def start: Option[String] =
     if (mongoExecutable.isEmpty) {
+      val port = new ServerSocket(0).getLocalPort
+      val bindIp = "127.0.0.1"
       val config = new MongodConfigBuilder()
         .version(Version.Main.PRODUCTION)
         .net(new Net(bindIp, port, Network.localhostIsIPv6()))
         .build();
-      Try(buildStarter) map { starter =>
+      (Try(buildStarter) map { starter =>
         val mExec = starter.prepare(config)
         mongoExecutable += mExec
         mExec.start()
         logger.info(s"MongodDb started: mongodb://$bindIp:$port")
-      }
-      true
+      }).toOption
+        .map(_ => s"mongodb://$bindIp:$port/")
     } else {
-      logger.warn(s"MongodDb already started: mongodb://$bindIp:$port")
-      false
+      logger.warn(s"MongodDb already started")
+      None
     }
 
-  def stop(): Unit = {
+  def stop(): Unit = if (mongoExecutable.nonEmpty) {
     val mExec = mongoExecutable.remove(0)
     mExec.stop()
-    logger.info(s"MongodDb stopped}")
+    logger.info(s"MongodDb stopped")
   }
 
   private def buildStarter = {

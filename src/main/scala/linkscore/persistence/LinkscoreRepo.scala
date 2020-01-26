@@ -1,6 +1,9 @@
 package linkscore.persistence
 
-import linkscore.domain.{Entry, Report}
+import java.net.{URL => JUrl}
+import java.time.LocalDateTime
+
+import linkscore.domain.{Entry, Report, Score}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
 import org.mongodb.scala._
 import org.mongodb.scala.bson.ObjectId
@@ -12,12 +15,17 @@ import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.result.DeleteResult
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
-class LinkscoreRepo(dbUrl: String, dbName: String)(implicit val ex: ExecutionContext) {
-  private case class MongoEntry(id: ObjectId, url: String, domain: String, score: Int)
+class LinkscoreRepo(dbUrl: String)
+                   (implicit val timestamper: () => LocalDateTime, implicit val ex: ExecutionContext) {
+  private case class MongoEntry(id: ObjectId, url: String, domain: String, score: Int, timestamp: LocalDateTime)
+  private val dbName = "scores"
   private object MongoEntry {
-    def apply(entry: Entry): MongoEntry = {
-      MongoEntry(new ObjectId(), entry.url.toString, entry.domain, entry.score)
+    def apply(entry: Entry): Try[MongoEntry] = {
+      Try(new JUrl(entry.url.value)) map { value =>
+        MongoEntry(new ObjectId(), entry.url.toString, value.getHost, entry.score.value, timestamper())
+      }
     }
   }
 
@@ -26,11 +34,16 @@ class LinkscoreRepo(dbUrl: String, dbName: String)(implicit val ex: ExecutionCon
   private val database: MongoDatabase = mongoClient.getDatabase(dbName).withCodecRegistry(codecRegistry)
   private val links: MongoCollection[MongoEntry] = database.getCollection("links")
 
-  def insert(item: Entry): Future[Completed] = links.insertOne(MongoEntry(item))
-    .toFuture()
+  def insert(item: Entry): Future[Boolean] = for {
+    mongoEntry <- Future.fromTry(MongoEntry(item))
+    _ <- links.insertOne(mongoEntry).toFuture()
+  } yield {
+    true
+  }
 
-  def delete(key: String): Future[DeleteResult] =
-    links.deleteMany(equal("url", s"URL($key)")).toFuture()
+  def delete(key: String): Future[Long] =
+    links.deleteMany(equal("url", s"URL(${key.trim})"))
+      .toFuture().map(_.getDeletedCount)
 
   def reportScoresByDomain: Future[Seq[Report]] = {
     val reports: MongoCollection[Document] = database.getCollection("links")
@@ -38,7 +51,7 @@ class LinkscoreRepo(dbUrl: String, dbName: String)(implicit val ex: ExecutionCon
       .toFuture()
       .map { results =>
         results.map(doc =>
-          Report(doc.getString("_id"), doc.getInteger("id").toInt, doc.getInteger("totalScore").toInt))
+          Report(doc.getString("_id"), doc.getInteger("id").toInt, Score(doc.getInteger("totalScore").toInt)))
       }
     }
 

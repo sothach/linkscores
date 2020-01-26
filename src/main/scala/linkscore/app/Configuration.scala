@@ -1,37 +1,35 @@
 package linkscore.app
 
 import java.net.ServerSocket
+import java.time.LocalDateTime
 
-import linkscore.persistence.{DbStarter, LinkscoreRepo}
-import org.slf4j.LoggerFactory
 import com.typesafe.config.ConfigFactory
+import linkscore.persistence.{DbStarter, LinkscoreRepo}
+import net.ceedubs.ficus.Ficus._
+import org.slf4j.LoggerFactory
+
 import scala.concurrent.ExecutionContext
 
 object Configuration {
   private val logger = LoggerFactory.getLogger(this.getClass)
-
-  private def getOption[T](key: String): Option[T] = if (conf.hasPath(key)) {
-    Some(conf.getAnyRef(key).asInstanceOf[T])
-  } else {
-    None
-  }
-
   private val conf = ConfigFactory.load()
+  private val parallelism =
+    conf.as[Option[Int]]("persistence.executor.parallelism").getOrElse(5)
 
-  private val parallelism = conf.getInt("persistence.executor.parallelism")
   private implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(
     new java.util.concurrent.ForkJoinPool(parallelism))
+  private implicit val ts: () => LocalDateTime = () => LocalDateTime.now
 
-  private val dbName = conf.getString("mongodb.database.name")
-  val dbHost: String = getOption[String]("mongodb.database.host")
-    .getOrElse("localhost")
-  val dbPort: Int = getOption[Int]("mongodb.database.port")
-    .getOrElse(new ServerSocket(0).getLocalPort)
+  val dbPort: Int = new ServerSocket(0).getLocalPort
+  private val mongoUrl = conf.as[Option[String]]("mongodb.database.url")
+  match {
+    case None => DbStarter.start
+    case url => url
+  }
 
-  DbStarter.start(dbHost, dbPort)
-  logger.info(s"creating repo attached to mongodb://$dbHost:$dbPort")
-  val scoreRepo = new LinkscoreRepo(s"mongodb://$dbHost:$dbPort/", dbName)
-  val commands = new Commands(scoreRepo)
+  logger.info(s"creating repo attached to $mongoUrl")
+  val scoreRepo = new LinkscoreRepo(mongoUrl.get)
+  val commands = new Machine(scoreRepo)
 
-  def shutdown(): Unit =  DbStarter.stop()
+  def shutdown(): Unit = DbStarter.stop()
 }

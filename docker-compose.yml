@@ -8,7 +8,7 @@ services:
     command: –smallfiles
 
   app:
-    image: sothach/umf
+    image: org.anized/linkscore:latest
     links:
       - mongo
     stdin_open: true

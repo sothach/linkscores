@@ -1,7 +1,7 @@
 package linkscore.persistence
 
 import linkscore.app.Configuration
-import linkscore.domain.{Entry, Report}
+import linkscore.domain.{Entry, Report, Score}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 
@@ -12,7 +12,7 @@ import scala.util.Success
 
 class RepoSpec extends FlatSpec with ScalaFutures with Matchers with BeforeAndAfterAll {
   private implicit val ec: ExecutionContext = ExecutionContext.global
-  import Configuration.{dbHost, dbPort, scoreRepo}
+  import Configuration.{scoreRepo,dbPort}
 
   override def beforeAll(): Unit = {
     val links = Seq(
@@ -24,7 +24,7 @@ class RepoSpec extends FlatSpec with ScalaFutures with Matchers with BeforeAndAf
         case Success(entry) =>
           scoreRepo.insert(entry)
       }
-    Await.ready(Future.sequence(links), 30 seconds)
+    Await.ready(Future.sequence(links), 1 minute)
   }
 
   override def afterAll(): Unit = Configuration.shutdown()
@@ -32,8 +32,8 @@ class RepoSpec extends FlatSpec with ScalaFutures with Matchers with BeforeAndAf
   "A collection of documents" should "be reduced correctly" in {
     val result = scoreRepo.reportScoresByDomain.futureValue
     result.size should be(2)
-    result should contain(Report("www.bbc.com",2,13))
-    result should contain(Report("www.rte.ie",2,50))
+    result should contain(Report("www.bbc.com",2,Score(13)))
+    result should contain(Report("www.rte.ie",2,Score(50)))
   }
 
   "Deleting a link" should "be reflected in the report" in {
@@ -44,11 +44,11 @@ class RepoSpec extends FlatSpec with ScalaFutures with Matchers with BeforeAndAf
 
     result.size should be(1)
     result.filter(_.domain == "www.bbc.com") should be(empty)
-    result should contain(Report("www.rte.ie",2,50))
+    result should contain(Report("www.rte.ie",2,Score(50)))
   }
 
   "Attempting to start an already started DB" should "nave no effect" in {
-    DbStarter.start(dbHost, dbPort) should be(false)
+    DbStarter.start should be(None)
   }
 
 }

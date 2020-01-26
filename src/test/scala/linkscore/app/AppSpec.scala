@@ -3,9 +3,8 @@ package linkscore.app
 import java.io.InputStream
 
 import org.scalatest.{FlatSpec, Matchers}
-import org.scalatestplus.mockito.MockitoSugar
 
-class AppSpec extends FlatSpec with Matchers with MockitoSugar {
+class AppSpec extends FlatSpec with Matchers {
 
   "When the Repl is launched, the Std IO channels" should "be connected" in {
     import java.io.{ByteArrayInputStream, ByteArrayOutputStream, PrintStream}
