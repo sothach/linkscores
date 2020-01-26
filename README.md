@@ -11,7 +11,7 @@
     one record, as the information about insertion dates and rates may be deemed valuable in the future
 1. __REMOVE__: Allow for deletion of a stored url
     - implication is that all urls matching that supplied will be deleted
-1. __EXPORT__: Produce a report detailing statistics for each unique domain store (the *host* portion of the URL)
+1. __EXPORT__: Produce a report detailing statistics for each unique domain stored (the *host* portion of the URL)
     - statistics consist of _domain_, _count_ and _total score_ 
 
 ## Assumptions/decisions
@@ -23,19 +23,19 @@
 ## Application Design
 ### User Interface
 A command-line dialog providing a command prompt and help menu, that accepts commands (see above), attempts to execute
-them, and reporting success or errors.
+them, reporting success or errors.
 
 It is implemented as a simple state-machine (`Machine`), driven by a command mapping (`CommandSet`), recursively 
-executing user commands until terminated (QUIT).  Actions interact directly with the persistence component (below)
+executing user commands until terminated (QUIT).  Actions interact directly with the persistence component (see below)
 to store and query the stored links.  This is designed to be easily extendible, should a new command need to be added,
-e.g., List all entries
+e.g., _List all entries_
 
 ### Persistence
 As the current requirements consist of insert, delete and a group-by query, the service interface is implemented 
 directly in the persistence class.  This implementation does, however, take pains to avoid leaking implementation 
 details out to its clients
 
-As and when requirements grow, it may make sense to refactored this into it's 'service' and 'storage' responsibilities.  
+As and when requirements grow, it may make sense to refactor this into its 'service' and 'storage' responsibilities.  
 As such future requirements are not currently known, it would not make sense to 'gold plate' the solution, but instead 
 wait until there is a business case to do so.  Likewise, the service is implemented directly without trying to appease
 the cargo-cult gods by defining a service trait (interface) at this point, although that might make sense if a future 

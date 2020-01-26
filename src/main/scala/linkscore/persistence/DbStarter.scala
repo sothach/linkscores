@@ -16,7 +16,6 @@ import scala.collection.mutable
 import scala.util.Try
 
 object DbStarter {
-
   private val logger = LoggerFactory.getLogger(this.getClass)
   private val mongoExecutable: mutable.Buffer[MongodExecutable] = mutable.Buffer.empty
 
