@@ -12,13 +12,15 @@ import org.mongodb.scala.bson.codecs.Macros._
 import org.mongodb.scala.model.Accumulators._
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.model.Updates.set
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 class LinkscoreRepo(dbUrl: String)
                    (implicit val timestamper: () => LocalDateTime, implicit val ex: ExecutionContext) {
-  private case class MongoEntry(id: ObjectId, url: String, domain: String, score: Int, timestamp: LocalDateTime)
+  private case class MongoEntry(id: ObjectId, url: String, domain: String, score: Int,
+                                timestamp: LocalDateTime, deleted: Boolean = false)
   private val dbName = "scores"
   private object MongoEntry {
     def apply(entry: Entry): Try[MongoEntry] = {
@@ -41,17 +43,18 @@ class LinkscoreRepo(dbUrl: String)
   }
 
   def delete(key: String): Future[Long] =
-    links.deleteMany(equal("url", s"URL(${key.trim})"))
-      .toFuture().map(_.getDeletedCount)
+    links.updateMany(
+      equal("url", s"URL(${key.trim})"),
+      set("deleted", true))
+      .toFuture().map(_.getModifiedCount)
 
-  def reportScoresByDomain: Future[Seq[Report]] = {
-    val reports: MongoCollection[Document] = database.getCollection("links")
-    reports.aggregate(Seq(group("$domain", sum("id", 1), sum("totalScore", "$score"))))
+  def reportScoresByDomain: Future[Seq[Report]] =
+    database.getCollection("links")
+      .aggregate(Seq(filter(equal("deleted", false)), group("$domain", sum("id", 1), sum("totalScore", "$score"))))
       .toFuture()
       .map { results =>
         results.map(doc =>
           Report(doc.getString("_id"), doc.getInteger("id").toInt, Score(doc.getInteger("totalScore").toInt)))
       }
-    }
 
 }

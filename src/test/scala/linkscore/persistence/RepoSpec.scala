@@ -37,11 +37,11 @@ class RepoSpec extends FlatSpec with ScalaFutures with Matchers with BeforeAndAf
   }
 
   "Deleting a link" should "be reflected in the report" in {
-    val deletion = scoreRepo.delete("http://www.bbc.com/news/world-europe-45746837")
-    Await.ready(deletion, 10 seconds)
+    val deletes =
+      scoreRepo.delete("http://www.bbc.com/news/world-europe-45746837").futureValue
+    deletes should be(2)
 
     val result = scoreRepo.reportScoresByDomain.futureValue
-
     result.size should be(1)
     result.filter(_.domain == "www.bbc.com") should be(empty)
     result should contain(Report("www.rte.ie",2,Score(50)))
